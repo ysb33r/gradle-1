@@ -21,9 +21,7 @@ import org.gradle.api.Incubating;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
-import org.gradle.api.file.FileCollection;
 import org.gradle.api.internal.project.ProjectInternal;
-import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.Delete;
 import org.gradle.internal.cleanup.BuildOutputCleanupRegistry;
 import org.gradle.language.base.internal.plugins.CleanRule;
@@ -63,18 +61,12 @@ public class LifecycleBasePlugin implements Plugin<ProjectInternal> {
         final BuildOutputCleanupRegistry buildOutputCleanupRegistry = project.getServices().get(BuildOutputCleanupRegistry.class);
         buildOutputCleanupRegistry.registerOutputs(buildDir);
 
-        final Provider<Delete> clean = project.getTasks().register(CLEAN_TASK_NAME, Delete.class, new Action<Delete>() {
+        project.getTasks().register(CLEAN_TASK_NAME, Delete.class, new Action<Delete>() {
             @Override
             public void execute(final Delete cleanTask) {
                 cleanTask.setDescription("Deletes the build directory.");
                 cleanTask.setGroup(BUILD_GROUP);
                 cleanTask.delete(buildDir);
-            }
-        });
-        buildOutputCleanupRegistry.registerOutputs(new Callable<FileCollection>() {
-            @Override
-            public FileCollection call() {
-                return clean.get().getTargetFiles();
             }
         });
     }

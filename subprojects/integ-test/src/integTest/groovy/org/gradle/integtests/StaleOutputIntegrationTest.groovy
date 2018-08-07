@@ -112,38 +112,6 @@ class StaleOutputIntegrationTest extends AbstractIntegrationSpec {
         executedAndNotSkipped(taskWithSources.taskPath)
     }
 
-    def "custom clean targets are removed"() {
-        given:
-        buildFile << """
-            apply plugin: 'base'
-            
-            task myTask {
-                outputs.dir "external/output"
-                outputs.file "customFile"
-                outputs.dir "build/dir"
-                doLast {}
-            }
-            
-            clean {
-                delete "customFile"
-            }
-        """
-        def dirInBuildDir = file("build/dir").createDir()
-        file("build/dir/stale-file.txt").touch()
-        def customFile = file("customFile").touch()
-        def myTaskDir = file("external/output").createDir()
-
-        when:
-        succeeds("myTask")
-        then:
-        dirInBuildDir.assertIsEmptyDir()
-        customFile.assertDoesNotExist()
-        buildFile.assertExists()
-        // We should improve this eventually.  We currently don't delete _all_ outputs from every task
-        // because we don't configure every clean task and we don't know if it's safe to remove all outputs.
-        myTaskDir.assertExists()
-    }
-
     def "stale outputs are removed after Gradle version change"() {
         given:
         buildFile << """
