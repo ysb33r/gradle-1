@@ -47,8 +47,8 @@ abstract class FileContentGenerator {
             }
             return """
                 plugins {
-                    id 'org.jetbrains.kotlin.jvm' version '1.2.60' apply false
-                    id 'org.jetbrains.kotlin.kapt' version '1.2.60' apply false
+                    id 'org.jetbrains.kotlin.jvm' version '1.2.50' apply false
+                    id 'org.jetbrains.kotlin.kapt' version '1.2.50' apply false
                 }
                 
                 subprojects {
