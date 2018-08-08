@@ -14,20 +14,10 @@
  * limitations under the License.
  */
 
-package org.gradle.api.internal.changedetection.state.mirror;
+package org.gradle.tooling.internal.protocol.cpp;
 
-import java.util.List;
-
-public class ImmutablePhysicalDirectorySnapshot extends AbstractPhysicalDirectorySnapshot {
-    private final List<PhysicalSnapshot> children;
-
-    public ImmutablePhysicalDirectorySnapshot(String absolutePath, String name, List<PhysicalSnapshot> children) {
-        super(absolutePath, name);
-        this.children = children;
-    }
-
-    @Override
-    public List<PhysicalSnapshot> getChildren() {
-        return children;
-    }
+/**
+ * Marker interface for {@link org.gradle.tooling.model.cpp.CppExecutable}.
+ */
+public interface InternalCppExecutable {
 }
