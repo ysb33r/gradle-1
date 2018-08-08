@@ -15,7 +15,9 @@
  * limitations under the License.
  */
 import org.apache.tools.ant.filters.ReplaceTokens
-import org.asciidoctor.gradle.AsciidoctorTask
+import org.asciidoctor.gradle.jvm.AsciidoctorTask
+import org.asciidoctor.gradle.jvm.AsciidoctorPdfTask
+import org.asciidoctor.gradle.jvm.AbstractAsciidoctorTask
 import org.gradle.build.docs.Docbook2Xhtml
 import org.gradle.build.docs.UserGuideTransformTask
 import org.gradle.build.docs.dsl.docbook.AssembleDslDocTask
@@ -29,11 +31,17 @@ import org.gradle.gradlebuild.PublicApi
 import org.gradle.gradlebuild.docs.PegDown
 import org.gradle.gradlebuild.unittestandcompile.ModuleType
 
+buildscript {
+	repositories { mavenLocal() }
+	dependencies { classpath 'org.ysb33r.gradle:grolifant:0.9-SNAPSHOT' }
+}
+
+
 plugins {
     id 'base'
     id 'gradlebuild.jsoup'
     id 'javascript-base'
-    id 'org.asciidoctor.convert'
+    id 'org.asciidoctor.jvm.convert'
 }
 
 repositories {
@@ -45,6 +53,7 @@ configurations {
     userGuideTask
     jquery
     jqueryTipTip
+    asciidoctorExtensions
 
     cssElements {
         // define an outgoing configuration, aimed at consumers looking
@@ -58,8 +67,8 @@ configurations {
 }
 
 dependencies {
-    asciidoctor "org.gradle:docs-asciidoctor-extensions:0.3.0"
-    asciidoctor project.files("src/main/resources")
+    asciidoctorExtensions "org.gradle:docs-asciidoctor-extensions:0.3.0"
+    asciidoctorExtensions project.files("src/main/resources")
 
     userGuideTask 'xalan:xalan:2.7.1', 'xerces:xercesImpl:2.11.0'
     userGuideTask 'xhtmlrenderer:xhtmlrenderer:R8rc1'
@@ -89,6 +98,7 @@ ext {
     userguideSrcDir = new File(srcDocsDir, 'userguide')
     userguideIntermediateOutputDir = new File(buildDir, 'userguideIntermediate')
     userguideSinglePageOutputDir = new File(buildDir, 'userguideSinglePage')
+    userguidePdfOutputDir = new File(buildDir, 'userguidePdf')
     dslSrcDir = new File(srcDocsDir, 'dsl')
     docsDir = file("$buildDir/docs")
     userguideDir = new File(docsDir, 'userguide')
@@ -239,7 +249,17 @@ def userguideSinglePage = tasks.register("userguideSinglePage", AsciidoctorTask)
     sourceDir = userguideSrcDir
     sources { include 'userguide_single.adoc' }
     outputDir = userguideSinglePageOutputDir
-    backends = ['pdf', 'html5']
+
+    attributes \
+        toc                 : 'macro',
+        toclevels           : 2,
+        'source-highlighter': 'coderay'
+}
+
+def userguidePdf = tasks.register("userguidePdf", AsciidoctorPdfTask) {
+    sourceDir = userguideSrcDir
+    sources { include 'userguide_single.adoc' }
+    outputDir = userguidePdfOutputDir
 
     attributes \
         toc                 : 'macro',
@@ -288,18 +308,20 @@ def distDocs = tasks.register("distDocs", AsciidoctorTask) {
     sourceDir = userguideSrcDir
     outputDir = distDocsDir
     sources { include 'getting-started.adoc' }
-    backends = ['html5']
+    //backends = ['html5']
 }
 
 asciidoctorj {
-    noDefaultRepositories = true
-    version = '1.5.7'
+//    noDefaultRepositories = true
+//    version = '1.5.7'
 }
 
 tasks.withType(AsciidoctorTask).configureEach {
     dependsOn css, samples, defaultImports
 
-    separateOutputDirs = false
+    configurations 'asciidoctorExtensions'
+
+    //separateOutputDirs = false
     options doctype: 'book'
 
     inputs.file "$srcDocsDir/css/manual.css"
@@ -339,7 +361,7 @@ def userguideMultiPage = tasks.register("userguideMultiPage", AsciidoctorTask) {
     }
     outputDir = userguideIntermediateOutputDir
 
-    backends = ['html5']
+//    backends = ['html5']
 
     attributes \
         icons               : null,
@@ -356,13 +378,14 @@ def userguideMultiPage = tasks.register("userguideMultiPage", AsciidoctorTask) {
 
 // Avoid overlapping outputs by copying exactly what we want from other intermediate tasks
 def userguide = tasks.register("userguide", Copy) {
-    dependsOn userguideMultiPage, userguideSinglePage
+    dependsOn userguideMultiPage, userguideSinglePage, userguidePdf
     description = 'Generates the userguide HTML and PDF'
     group = 'documentation'
 
     from resourceFiles
     from userguideIntermediateOutputDir
     from userguideSinglePageOutputDir
+    from userguidePdfOutputDir
 
     into userguideDir
     rename 'userguide_single.pdf', 'userguide.pdf'
